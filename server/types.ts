@@ -3,6 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 import express from 'express';
+import WebSocket from 'ws';
 
 export type supportedAuthenticationStrategyTypes = 'none' | 'scram' | 'oauth';
 
@@ -140,6 +141,8 @@ export interface expressMiddleware {
 }
 /** the request object provided on UI server request. Core express request plus additions */
 export type strimziUIRequestType = express.Request & {
+  /** indicates this request is a websocket request (and that the response will have a ws object to interact with) */
+  isWs: boolean | false;
   headers: {
     /** unique identifier for a request. If not present, will be added by the core module */
     surid: string;
@@ -147,6 +150,7 @@ export type strimziUIRequestType = express.Request & {
 };
 /** the response object provided on UI server request. Core express request plus additions */
 export type strimziUiResponseType = express.Response & {
+  ws: WebSocket;
   locals: {
     /** the context object for this request/response */
     strimziuicontext: strimziUIContextType;

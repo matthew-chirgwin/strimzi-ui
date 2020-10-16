@@ -2,12 +2,13 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
+import WebSocket from 'ws';
 import http from 'http';
 
 import { loadConfig, watchConfig, getServerName } from 'serverConfig';
 import { returnExpress } from 'core';
 import { log } from 'placeholder';
+import { strimziUiResponseType } from 'types';
 
 const errorHandler: (err: Error, ...others: unknown[]) => void = (
   err,
@@ -60,8 +61,8 @@ loadConfig((loadedInitialConfig) => {
     );
     config = latestConfig;
   }); // load config and update config value
-
-  const httpServer = http.createServer(returnExpress(serverName, () => config));
+  const expressApp = returnExpress(serverName, () => config);
+  const httpServer = http.createServer(expressApp);
 
   const instance = httpServer.listen(config.port, config.hostname, () =>
     log(
@@ -71,6 +72,18 @@ loadConfig((loadedInitialConfig) => {
       'server ready',
       `Strimzi ui server ready at http://${config.hostname}:${config.port}`
     )
+  );
+
+  const wss = new WebSocket.Server({ noServer: true });
+  instance.on('upgrade', (req, socket, head) =>
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      const res = new http.ServerResponse(req) as strimziUiResponseType;
+      // add/mark the request as a websocket request
+      req.isWs = true;
+      res.ws = ws;
+      // call the express app as usual
+      expressApp(req, res);
+    })
   );
 
   const shutdown = (server) => () =>
