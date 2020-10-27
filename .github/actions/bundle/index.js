@@ -5,16 +5,32 @@
 const core = require("@actions/core");
 const fs = require("fs");
 
+// map of nicer labels to built bundle files in the reports
 const BUNDLE_LABELS = {
   'main.bundle.js': "Strimzi UI JS Bundle",
+  'main.bundle..js.gz': "Strimzi UI JS Bundle (GZ compressed)",
+  'main.css': "Strimzi UI css Bundle",
+  'main.js': "Strimzi UI Server JS Bundle",
 };
-const TABLE_HEADINGS = ['Bundle', 'New Size', 'Original Size', 'Increase/Decrese', 'File'];
+const TABLE_HEADINGS = ['Bundle', 'New Size', 'Original Size', 'Increase/Decrease', 'File'];
 
 const round = (value) => Math.round(value * 100) / 100;
 
-const getReports = () => {
-  let masterReport = JSON.parse(core.getInput('MASTER_REPORT'));
-  const currentReport = JSON.parse(fs.readFileSync('./generated/bundle-analyser/report.json'));
+const CLIENT_REPORT_CONFIG = {
+  reportFor: 'client',
+  masterReportEnvvar: 'CLIENT_MASTER_REPORT',
+  branchReportFile: './generated/bundle-analyser/client-report.json',
+};
+
+const SERVER_REPORT_CONFIG = {
+  reportFor: 'server',
+  masterReportEnvvar: 'SERVER_MASTER_REPORT',
+  branchReportFile: './generated/bundle-analyser/server-report.json',
+};
+
+const getReports = (currentMasterReportEnvvar, branchReportFile) => {
+  let masterReport = core.getInput(currentMasterReportEnvvar) ? JSON.parse(core.getInput(currentMasterReportEnvvar)) : [];
+  const currentReport = fs.existsSync(branchReportFile) ? JSON.parse(fs.readFileSync(branchReportFile)) : [];
   return {masterReport, currentReport};
 };
 
@@ -58,13 +74,18 @@ const calculateOverallChange = (bundleSizes) => {
 
 async function buildBundleReport() {
   try {
-    const {masterReport, currentReport} = getReports();
-    const bundleSizes = initBundleSizeObject(masterReport);
-    const bundleReportTable = createBundleReportTable(currentReport, bundleSizes);
-    const overallBundleSizeChange = calculateOverallChange(bundleSizes);
 
-    core.setOutput('bundle_report', bundleReportTable);
-    core.setOutput('overall_bundle_size_change', overallBundleSizeChange);
+    [CLIENT_REPORT_CONFIG, SERVER_REPORT_CONFIG].forEach(reportToProcess => {
+      const {reportFor, masterReportEnvvar, branchReportFile} = reportToProcess;
+      const {masterReport, currentReport} = getReports(masterReportEnvvar, branchReportFile);
+      const bundleSizes = initBundleSizeObject(masterReport);
+      const bundleReportTable = createBundleReportTable(currentReport, bundleSizes);
+      const overallBundleSizeChange = calculateOverallChange(bundleSizes);
+  
+      core.setOutput(`${reportFor}_bundle_report`, bundleReportTable);
+      core.setOutput(`${reportFor}_overall_bundle_size_change`, overallBundleSizeChange);
+    });
+
   } catch (error) {
     core.setFailed(error.message);
   }
