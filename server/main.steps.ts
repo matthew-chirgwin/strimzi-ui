@@ -3,7 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 import http from 'http';
-import https from 'https';
+import https, { Agent } from 'https';
 import { resolve, sep } from 'path';
 import { writeFile, mkdir } from 'fs';
 import { ChildProcess, exec } from 'child_process';
@@ -72,7 +72,7 @@ const HTTPS_TEST_CONFIG = {
     endpoint: '/api/test',
     statusCode: 418,
     others: {
-      rejectUnauthorized: false, // allow self signed certs
+      agent: new Agent({ rejectUnauthorized: false }), // allow self signed certs
     },
   },
 };
