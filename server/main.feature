@@ -9,16 +9,19 @@ Feature: strimzi-ui server
     When I start the server
     Then the server starts
 
+    @local-only
     Scenario: The server bootstraps as expected given a secured configuration
     Given an https configuration file
     When I start the server
     Then the server starts
 
+    @local-only
     Scenario: The server bootstraps as expected given a non secured configuration
     Given an http configuration file
     When I start the server
     Then the server starts
 
+    @local-only
     Scenario: The reloads module configuration/state when the configuration file changes
     Given a starting configuration file
     When I start the server

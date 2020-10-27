@@ -72,7 +72,9 @@ const HTTPS_TEST_CONFIG = {
     endpoint: '/api/test',
     statusCode: 418,
     others: {
+      protocol: 'https:',
       agent: new Agent({ rejectUnauthorized: false }), // allow self signed certs
+      minVersion: 'TLSv1.2',
     },
   },
 };
@@ -187,7 +189,7 @@ When(
         { env: childEnv },
         (_, stdOut, stdErr) => {
           stdOut && console.log(stdOut);
-          stdErr && console.error(stdErr);
+          stdErr && console.error(`ERROR: ${stdErr}`);
         }
       );
 
@@ -200,30 +202,6 @@ When(
           }),
         5000 // time required to start the server
       );
-    });
-  })
-);
-
-Then(
-  'the server starts',
-  stepWithWorld(async (world) => {
-    const { type, endpoint, statusCode, others = {} } = world.request;
-    return new Promise<void>((resolve, reject) => {
-      const testRequest = type.request(
-        {
-          hostname: 'localhost',
-          port: 3000,
-          path: endpoint,
-          method: 'GET',
-          ...others,
-        },
-        (res) => {
-          expect(res.statusCode).toBe(statusCode);
-          resolve();
-        }
-      );
-      testRequest.on('error', reject);
-      testRequest.end();
     });
   })
 );
@@ -277,6 +255,8 @@ And(
   })
 );
 
+Then('the server starts', stepWithWorld(makeRequestFromWorldConfig));
+
 Then(
   'the server reflects that configuration change',
   stepWithWorld(makeRequestFromWorldConfig)
@@ -297,4 +277,7 @@ After(
   })
 );
 
-Fusion('main.feature');
+/* Some of the scenarios being tested do not work reliably when run via github action/workflow. If we are in a workflow, skip tests marked as local only */
+const tags = process.env.GITHUB_WORKFLOW ? 'not @local-only' : undefined;
+
+Fusion('main.feature', { tagFilter: tags });

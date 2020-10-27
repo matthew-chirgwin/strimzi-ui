@@ -52,11 +52,13 @@ async function comment(message) {
 
 async function createComment() {
   try {
-    const bundleReportContent = core.getInput("BUNDLE_REPORT");
+    const bundleReportContent = core.getInput("BUNDLE_REPORT") ? JSON.parse(core.getInput("BUNDLE_REPORT")) : {};
+    console.dir(bundleReportContent);
+
     const testCoverage = core.getInput("TEST_COVERAGE");
 
     const title = '# PR Report';
-    const bundleText = `## Bundle Sizes\n${Object.entries(bundleReportContent).reduce((acc, [codeArea, {bundle_report, overall_bundle_size_change}]) => `${acc}<details><summary>View bundle sizes for '${codeArea}'</summary><br>\n\n${bundle_report}\n### Overall bundle size change: ${overall_bundle_size_change}\n</details>`, '')}`;
+    const bundleText = `## Bundle Sizes\n${Object.entries(bundleReportContent).reduce((acc, [codeArea, {bundle_report, overall_bundle_size_change}]) => `${acc}<details><summary>View bundle sizes for '${codeArea}'</summary><br>\n\n${bundle_report}\n##### Overall bundle size change: ${overall_bundle_size_change}\n</details>`, '')}`;
     const testText = `## Test Coverage\n<details><summary>View test coverage</summary><br>\n\n${testCoverage}\n</details>`;
     const footer = `Triggered by commit: ${github.context.sha}`;
 

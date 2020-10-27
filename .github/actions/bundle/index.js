@@ -8,13 +8,12 @@ const fs = require("fs");
 // map of nicer labels to built bundle files in the reports
 const BUNDLE_LABELS = {
   'main.bundle.js': "Strimzi UI JS Bundle",
-  'main.bundle..js.gz': "Strimzi UI JS Bundle (GZ compressed)",
-  'main.css': "Strimzi UI css Bundle",
   'main.js': "Strimzi UI Server JS Bundle",
 };
 const TABLE_HEADINGS = ['Bundle', 'New Size', 'Original Size', 'Increase/Decrease', 'File'];
 
 const round = (value) => Math.round(value * 100) / 100;
+const percentageValueOrNa = value => value === Infinity ? 'N/A' : `${value}%`;
 
 const CLIENT_REPORT_CONFIG = {
   reportFor: 'client',
@@ -56,7 +55,7 @@ const createBundleReportTable = (bundleReport, bundleSizes) => bundleReport.redu
   const masterSize = round(masterSizeBytes / 1024);
   const bundleLabel = BUNDLE_LABELS[bundle.label] || bundle.label;
   const sizeDiff = round(currentSizeBytes / masterSizeBytes) - 1;
-  const sizeDiffText = `${round(sizeDiff * 100)}%`;
+  const sizeDiffText = percentageValueOrNa(round(sizeDiff * 100));
 
   return `${previousbundleText} |${bundleLabel}|${currentSize}KB|${masterSize}KB|${sizeDiffText}|${bundle.label}|\n`;
 }, createTableHeader(TABLE_HEADINGS));
@@ -69,7 +68,7 @@ const calculateOverallChange = (bundleSizes) => {
     };
   }, {totalMasterSize: 0, totalCurrentSize: 0});
 
-  return `${round(((sizes.totalCurrentSize / sizes.totalMasterSize) - 1) * 100)}%`;
+  return percentageValueOrNa(round(((sizes.totalCurrentSize / sizes.totalMasterSize) - 1) * 100));
 };
 
 async function buildBundleReport() {
@@ -87,9 +86,8 @@ async function buildBundleReport() {
         'bundle_report': bundleReportTable,
         'overall_bundle_size_change': overallBundleSizeChange
       };
-    }).reduce((acc, {reportFor, bundle_report, overall_bundle_size_change}) => ({...acc, [reportFor]: {bundle_report, overall_bundle_size_change}}), {});
-
-    core.setOutput(`bundle_report`, actionOutput);
+    }).reduce((acc, {reportFor, bundle_report, overall_bundle_size_change}) => ({...acc, [reportFor]: {reportFor, bundle_report, overall_bundle_size_change}}), {});
+    core.setOutput(`bundle_report`, JSON.stringify(actionOutput));
 
   } catch (error) {
     core.setFailed(error.message);
