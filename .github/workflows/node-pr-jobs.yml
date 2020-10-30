@@ -31,6 +31,8 @@ jobs:
           npm run addDevCerts
       - name: Build
         run: npm run build
+      - name: Build again because
+        run: npm run build
       - name: Calculate bundle size
         id: bundle
         uses: ./.github/actions/bundle
