@@ -13,7 +13,10 @@ const onLoad: () => void = () => {
   img.src = image;
   img.alt = 'Strimzi logo';
   root.append(img);
-  root.append(document.createTextNode('Welcome to the Strimzi UI'));
+  root.append(
+    document.createTextNode('Welcome to the Strimzi UI: Jordan edition')
+  );
+  root.append(document.createTextNode('Jordan edition'));
 };
 
 window.addEventListener('load', onLoad);
