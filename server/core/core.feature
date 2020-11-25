@@ -34,3 +34,19 @@ Feature: core module
         And I run an instance of the Strimzi-UI server
         When I make a 'get' request to '/'
         Then the response sets a cookie named 'server-name'
+
+    Scenario: If mockapi and api modules are configured, only the api module is mounted
+        Given a 'api_and_mockapi' server configuration
+        And I run an instance of the Strimzi-UI server
+        Then only the api module is mounted
+    
+    Scenario: Module's HTTP handlers are mounted in in context root length order
+        Given a 'production' server configuration
+        And I run an instance of the Strimzi-UI server
+        Then modules are mounted with respect to their context root specifitity 
+
+    Scenario: If a module is mounted, but then disabled, requests are rejected
+        Given a 'production' server configuration
+        And I run an instance of the Strimzi-UI server
+        When I change to a 'mockapi_only' configuration
+        Then requests for modules which were enabled but now are not return the expected responses

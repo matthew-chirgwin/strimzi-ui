@@ -4,9 +4,9 @@
  */
 import express from 'express';
 import { UIServerModule } from 'types';
-import bodyParser from 'body-parser';
 import { ApolloServer } from 'apollo-server-express';
 import { schema } from './data';
+import bodyParser from 'body-parser';
 
 const moduleName = 'mockapi';
 
@@ -18,6 +18,7 @@ export const MockApiModule: UIServerModule = {
 
     // endpoint used for test purposes
     routerForModule.get('/test', (_, res) => {
+      // /api/test
       const { entry } = res.locals.strimziuicontext.logger;
       const { exit } = entry('`/test` handler');
       res.setHeader('x-strimzi-ui-module', moduleName);
@@ -30,10 +31,22 @@ export const MockApiModule: UIServerModule = {
       resolvers: {},
       debug: true,
       mockEntireSchema: true,
+      playground: true,
+      subscriptions: {
+        path: '/api', //must match mount point - ie subscription handler registered at /api
+        keepAlive: 5000,
+      },
     });
 
-    routerForModule.use(bodyParser.json(), server.getMiddleware({ path: '/' }));
-
-    return exit({ mountPoint: '/api', routerForModule });
+    routerForModule.use(
+      bodyParser.json(),
+      server.getMiddleware({ path: '/' }) // /api/
+    );
+    return exit({
+      mountPoint: '/api',
+      httpHandlers: routerForModule,
+      customUpgradeHandler: (serverInstance) =>
+        server.installSubscriptionHandlers(serverInstance),
+    });
   },
 };

@@ -7,9 +7,10 @@ const {
   mockAdminCertificates,
   devEnvValues,
 } = require('../tooling/runtimeDevUtils.js');
-const { devServer, mockadminServer } = devEnvValues;
+const { devServer, mockadminServer, auth } = devEnvValues;
 
 module.exports = {
+  ...auth,
   client: {
     transport: {
       ...serverCertificates,
@@ -17,9 +18,6 @@ module.exports = {
   },
   logging: {
     level: 'debug',
-    prettyPrint: {
-      translateTime: true,
-    },
   },
   modules: {
     api: true,

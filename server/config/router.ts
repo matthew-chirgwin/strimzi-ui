@@ -27,6 +27,6 @@ export const ConfigModule: UIServerModule = {
       server.getMiddleware({ path: '/' })
     );
 
-    return exit({ mountPoint: '/config', routerForModule });
+    return exit({ mountPoint: '/config', httpHandlers: routerForModule });
   },
 };

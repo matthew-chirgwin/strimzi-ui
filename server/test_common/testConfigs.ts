@@ -88,6 +88,11 @@ const securedApiModuleConfig: () => serverConfigType = () =>
     },
   });
 
+const apiAndMockApiConfig: () => serverConfigType = () =>
+  merge({}, defaultTestConfig(), {
+    modules: { ...modules, api: true, mockapi: true },
+  });
+
 export const getConfigForName: (name: string) => serverConfigType = (name) => {
   switch (name) {
   default:
@@ -110,5 +115,7 @@ export const getConfigForName: (name: string) => serverConfigType = (name) => {
     return securedApiModuleConfig();
   case 'api_with_custom_context_root':
     return apiModuleConfigWithCustomContextRoot();
+  case 'api_and_mockapi':
+    return apiAndMockApiConfig();
   }
 };

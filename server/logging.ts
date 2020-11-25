@@ -103,4 +103,5 @@ export {
   generateHttpLogger,
   updateRootLoggerOptions,
   STRIMZI_UI_REQUEST_ID_HEADER,
+  generateRequestID,
 };

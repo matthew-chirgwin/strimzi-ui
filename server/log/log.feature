@@ -13,8 +13,7 @@ Feature: log module
     Scenario: Sets up the WebSocket connection on /log call
     Given a 'log_only' server configuration
     And I run an instance of the Strimzi-UI server
-    And I enable WebSocket connections on the Strimzi-UI server
-    When I make a WebSocket connection request to '/log'
+    When I make a websocket request to '/log'
     And I send a logging WebSocket message
     And I send a logging WebSocket message without a clientLevel
     And I send a logging WebSocket message that is not a JSON array

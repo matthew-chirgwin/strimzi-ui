@@ -15,10 +15,9 @@ Then(
 
 And(
   'I send a logging WebSocket message',
-  stepWithWorld(async (world) => {
-    const { websocket } = world;
-
-    websocket.send(
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+    ws.init_send.trigger(
       JSON.stringify([
         {
           clientLevel: 'warn',
@@ -31,9 +30,10 @@ And(
 
 And(
   'I send a logging WebSocket message without a clientLevel',
-  stepWithWorld(async (world) => {
-    const { websocket } = world;
-    websocket.send(
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+
+    ws.init_send.trigger(
       JSON.stringify([
         {
           msg: 'test logging message',
@@ -45,17 +45,19 @@ And(
 
 And(
   'I send a non-string logging WebSocket message',
-  stepWithWorld(async (world) => {
-    const { websocket } = world;
-    websocket.send(new ArrayBuffer(10));
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+
+    ws.init_send.trigger(new ArrayBuffer(10));
   })
 );
 
 And(
   'I send a logging WebSocket message that is not a JSON array',
-  stepWithWorld(async (world) => {
-    const { websocket } = world;
-    websocket.send(
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+
+    ws.init_send.trigger(
       JSON.stringify({
         clientLevel: 'warn',
         msg: 'test logging message',
@@ -66,9 +68,27 @@ And(
 
 And(
   'I send an unparsable string logging WebSocket message',
-  stepWithWorld(async (world) => {
-    const { websocket } = world;
-    websocket.send('{this is not: "json"}');
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+
+    ws.init_send.trigger('{this is not: "json"}');
+  })
+);
+
+And(
+  'I close the WebSocket',
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+    ws.init_close.trigger(0, 'Test close');
+  })
+);
+
+And(
+  'the WebSocket is closed',
+  stepWithWorld(({ wsRequest }) => {
+    const { ws } = wsRequest;
+    expect(ws.close.mock()).toHaveBeenCalledTimes(1);
+    expect(ws.close.mock()).toHaveBeenCalledWith(0, 'Test close');
   })
 );
 

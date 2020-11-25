@@ -19,14 +19,12 @@ module.exports = {
   },
   logging: {
     level: 'debug',
-    prettyPrint: {
-      translateTime: true,
-    },
   },
   modules: {
     api: false,
     client: false,
-    config: true,
+    config: false,
+    log: false,
     mockapi: true,
   },
   proxy: {

@@ -37,7 +37,7 @@ const server: Config<Literal> = {
       },
       proxy: {
         hostname: 'strimzi.admin.hostname.com',
-        contextRoot: '/',
+        contextRoot: '/graphql',
         port: 9080,
         transport: {},
       },

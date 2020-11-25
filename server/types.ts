@@ -3,10 +3,13 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 import express from 'express';
-import WebSocket from 'ws';
 import { SecureVersion } from 'tls';
 import { Level, Logger, LoggerOptions } from 'pino';
+import http, { IncomingMessage } from 'http';
+import https from 'https';
 import { exposedClientType, exposedFeatureFlagsType } from 'ui-config/types';
+import WebSocket from 'ws';
+import { Socket } from 'net';
 
 export type supportedAuthenticationStrategyTypes = 'none' | 'scram' | 'oauth';
 
@@ -111,18 +114,53 @@ export type strimziUIContextType = {
   logger: entryExitLoggerType;
 };
 
+export type serverType = http.Server | https.Server;
+
+/** the handler which when invoked will bind upgrade events to the provided server, using the provided websocket server */
+export interface bindToServer {
+  (server: http.Server | https.Server, wsServer: WebSocket.Server): void;
+}
+/** IMPORTANT - `customWebsocketUpgrade` should only be used in cases where a module needs to own the whole websocket upgrade. This should not be needed in 99% of use cases. */
+export interface customWebsocketUpgrade {
+  (server: http.Server | https.Server, socketAuthFn: socketAuthFn): void;
+}
+
+/** A function which when invoked will check the authentication status of the provided websocket. If invalid, the socket will be closed with a `511` RC. If the owner of the socket is authenticated, `next` will be invoked */
+export interface socketAuthFn {
+  (msg: IncomingMessage, socket: Socket, next: () => void): void;
+}
+/** the handler invoked when a new websocket request is made to this module. It is provided the websocket to bind to, as well as an `socketAuthFn` authentication function to use as required */
+export interface websocketHandler {
+  (context: strimziUIContextType, ws: WebSocket, authFn: socketAuthFn): void;
+}
+/** a function invoked before any websocket upgrade event occurs. Use this to configure/set up your `wsHandler` per websocket connection, before any calls to `wsHandler` occur. Provided as a parameter is the request received to upgrade to a websocket */
+export interface preUpgradeHandler {
+  (context: strimziUIContextType, msg: IncomingMessage): Promise<void>;
+}
+
+export type httpHandlers = express.Router;
+
+/** A server module represents a standalone set of handlers for either web (HTTP(S)) or websocket (WS(S)) requests. Handlers are registered at a mounting point, and any requests received to this point will be passed to the provided handlers, depending on protocol */
+export type serverModule = {
+  /** the root/mounting point for requests made to this module */
+  mountPoint: string;
+  /** an express router to handle HTTP requests on behalf of this module */
+  httpHandlers?: httpHandlers;
+  /** IMPORTANT - `customUpgradeFn` should only be used in cases where a module needs to own the whole websocket upgrade. This should not be needed in 99% of use cases. If used, any provided `preUpgradeHandler` or `wsHandler` will NOT be called */
+  customUpgradeHandler?: customWebsocketUpgrade;
+  /** a callback invoked before any websocket upgrade event occurs. Use this to configure/set up your `wsHandler` per websocket connection, before any calls to `wsHandler` occur */
+  preUpgradeHandler?: preUpgradeHandler;
+  /** the handler invoked when a new websocket request is made to this module. It is provided the websocket to bind to, as well as an `socketAuthFn` authentication function to use as required */
+  wsHandler?: websocketHandler;
+};
+
 interface addModule {
   /** function called to add a module to the UI server */
   (
     mountLogger: entryExitLoggerType,
     authFunction: expressMiddleware,
     configAtServerStart: serverConfigType
-  ): {
-    /** the root/mounting point for requests made to this module */
-    mountPoint: string;
-    /** an express router to handle requests on behalf of this module */
-    routerForModule: express.Router;
-  };
+  ): serverModule;
 }
 
 export type UIServerModule = {
@@ -142,8 +180,6 @@ export interface expressMiddleware {
 }
 /** the request object provided on UI server request. Core express request plus additions */
 export type strimziUIRequestType = express.Request & {
-  /** indicates this request is a websocket request (and that the response will have a ws object to interact with) */
-  isWs: boolean | false;
   headers: {
     /** unique identifier for a request. If not present, will be added by the core module, and returned in the response */
     'x-strimzi-ui-request': string;
@@ -151,7 +187,6 @@ export type strimziUIRequestType = express.Request & {
 };
 /** the response object provided on UI server request. Core express request plus additions */
 export type strimziUIResponseType = express.Response & {
-  ws: WebSocket;
   locals: {
     /** the context object for this request/response */
     strimziuicontext: strimziUIContextType;

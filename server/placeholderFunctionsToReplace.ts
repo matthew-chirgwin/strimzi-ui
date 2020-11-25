@@ -5,17 +5,15 @@
 // placeholder functions - to be replaced by actual implementation later
 
 import express from 'express';
-import { authenticationConfigType } from 'types';
+import { authenticationConfigType, socketAuthFn } from 'types';
 
-// https://github.com/orgs/strimzi/projects/2#card-44265081
-// function which returns a piece of express middleware for a given auth strategy
-const authFunction: (
-  config: authenticationConfigType
+const generateExpressAuthFn: (
+  strategy: string
 ) => (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction
-) => void = ({ strategy }) => {
+) => void = (strategy) => {
   switch (strategy) {
     default:
     case 'none':
@@ -25,5 +23,37 @@ const authFunction: (
       return (req, res) => res.sendStatus(511); // if auth on, reject for sake of example. This is a middleware, akin to passport doing its checks.
   }
 };
+
+const generateWSAuthFn: (strategy: string) => socketAuthFn = (strategy) => {
+  switch (strategy) {
+    default:
+    case 'none':
+      return (msg, socket, next) => next();
+    case 'scram':
+    case 'oauth':
+      return (msg, socket) => {
+        if (socket !== null) {
+          // if auth on, reject for sake of example. This is a middleware, akin to passport doing its checks.
+          socket.write('HTTP/1.0 511 Network Authentication Required\n\n\n\n'); // headers
+          socket.write('Network Authentication Required'); // body
+          socket.end();
+        }
+      };
+  }
+};
+
+const authFunction: (
+  config: authenticationConfigType
+) => {
+  expressAuthFn: (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => void;
+  socketAuthFn: socketAuthFn;
+} = ({ strategy }) => ({
+  expressAuthFn: generateExpressAuthFn(strategy),
+  socketAuthFn: generateWSAuthFn(strategy),
+});
 
 export { authFunction };

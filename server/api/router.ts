@@ -3,13 +3,12 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 import express from 'express';
-import { createProxyServer } from 'http-proxy';
 import { UIServerModule } from 'types';
 
 import {
-  proxyErrorHandler,
-  proxyCompleteHandler,
-  proxyStartHandler,
+  proxyConfigType,
+  generateWSProxy,
+  generateWebProxy,
 } from './controller';
 
 const moduleName = 'api';
@@ -22,26 +21,26 @@ export const ApiModule: UIServerModule = {
     const { hostname, port, contextRoot, transport } = proxy;
     const { cert, minTLS } = transport;
 
-    const proxyConfig = {
-      target: `${cert ? 'https' : 'http'}://${hostname}:${port}${contextRoot}`,
+    // pluck all required config we need to proxy http and ws traffic
+    const config: proxyConfigType = {
+      targetWeb: `${
+        cert ? 'https' : 'http'
+      }://${hostname}:${port}${contextRoot}`,
+      targetWs: `${cert ? 'wss' : 'ws'}://${hostname}:${port}${contextRoot}`,
       ca: cert,
       minVersion: minTLS,
-      changeOrigin: true,
-      secure: cert ? true : false,
     };
 
-    logger.debug({ proxyConfig }, `api proxy configuration`);
-
+    logger.debug({ config }, `api proxy configuration`);
     const routerForModule = express.Router();
-    const backendProxy = createProxyServer(proxyConfig);
 
-    // add proxy event handlers
-    backendProxy.on('error', proxyErrorHandler);
-    backendProxy.on('proxyReq', proxyStartHandler);
-    backendProxy.on('proxyRes', proxyCompleteHandler);
-    // proxy all requests post auth check
-    routerForModule.all('*', authFn, (req, res) => backendProxy.web(req, res));
+    // proxy all http requests post auth check
+    routerForModule.all('*', authFn, generateWebProxy(config));
 
-    return exit({ mountPoint: '/api', routerForModule });
+    return exit({
+      mountPoint: '/api',
+      httpHandlers: routerForModule,
+      ...generateWSProxy(config),
+    });
   },
 };

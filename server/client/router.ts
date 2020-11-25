@@ -49,6 +49,6 @@ export const ClientModule: UIServerModule = {
         res.redirect(`/index.html`)
       );
 
-    return exit({ mountPoint: '/', routerForModule });
+    return exit({ mountPoint: '/', httpHandlers: routerForModule });
   },
 };

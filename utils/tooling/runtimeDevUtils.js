@@ -7,6 +7,12 @@ const { resolve } = require('path');
 
 // development time environment variable overrides.
 const devEnvValues = {
+  // development auth settings
+  auth: {
+    authentication: {
+      strategy: process.env.SD_AUTH_TYPE || 'none',
+    },
+  },
   // webpack dev server hostname and port
   webpackDevServer: {
     hostname: process.env.WDS_HOSTNAME || 'localhost',

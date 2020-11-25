@@ -110,4 +110,30 @@ Then(
   })
 );
 
+Then(
+  'only the api module is mounted',
+  stepWithWorld((world) => {
+    const { server } = world;
+    // make a request to the test endpoint, which should not match. Instead, the api module should fire, which should then error as it has not been configured
+    return server.get('/api/test').expect(500);
+  })
+);
+
+Then(
+  'modules are mounted with respect to their context root specifitity',
+  stepWithWorld((world) => {
+    const { server } = world;
+    // expect a 426 upgrade response from the log module. Previously, the shorter client module would match first. If it does not, that means the length of context root has been respected
+    return server.get('/log').expect(426);
+  })
+);
+
+Then(
+  'requests for modules which were enabled but now are not return the expected responses',
+  stepWithWorld((world) => {
+    const { server } = world;
+    return server.get('/log').expect(404);
+  })
+);
+
 Fusion('core.feature');

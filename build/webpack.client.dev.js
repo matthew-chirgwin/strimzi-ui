@@ -15,7 +15,7 @@ const {
   devEnvToUseTls,
   devEnvValues,
 } = require('../utils/tooling/runtimeDevUtils.js');
-const { webpackDevServer, devServer } = devEnvValues;
+const { webpackDevServer, devServer, auth } = devEnvValues;
 
 const {
   withHTMLPlugin,
@@ -45,7 +45,7 @@ const devSpecificConfig = {
   plugins: [
     withHTMLPlugin({
       bootstrapConfigInsert: encodeURIComponent(
-        JSON.stringify({ authType: 'none' })
+        JSON.stringify({ authType: auth.authentication.strategy })
       ), // template in bootstrap config required, which would normally be provided by the client server module
     }),
     withNormalModuleReplacementPlugin(),
@@ -76,6 +76,7 @@ const devSpecificConfig = {
           devServer.port
         }`,
         secure: false,
+        ws: true,
       },
     ],
     overlay: {

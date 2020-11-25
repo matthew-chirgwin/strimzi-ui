@@ -4,7 +4,7 @@ This module represents the core Express server. It also imports, configures and 
 
 ## Public api
 
-The core `app.ts` file (in place of `router.ts`) exports one function, `returnExpress`. This function takes one parameter, being a callback to get the current configuration. This is expected to be used in `main.ts` to bind the returned express app to an http(s) server.
+The core `app.ts` file (in place of `router.ts`) exports one function, `returnRequestHandlers`. This function takes one parameter, being a callback to get the current configuration. This is expected to be used in `main.ts` to bind the returned express app to an http(s) server.
 
 ## Interaction with other modules
 
